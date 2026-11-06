@@ -1,10 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Orbit — AI Chatbot</title>
 <style>
-    body {
-        background-image: url('https://img-prod-cms-rt-microsoft-com.akamaized.net/cms/api/am/imageFileData/RE4wHgb?ver=2349');
-        background-size: cover;
-        font-weight: bold;
-        text-align: center;
-        font-size: 40px;
+:root{--bg:#101120;--rail:#15162a;--line:#2e304c;--text:#f4f2ff;--muted:#adafcf;--accent:#c3b0ff;--mono:ui-monospace,Consolas,monospace;font:15px/1.5 "Segoe UI",system-ui,sans-serif;color:var(--text);background:var(--bg)}
+*{box-sizing:border-box}
+body{margin:0;height:100dvh;display:grid;grid-template-columns:242px minmax(0,1fr);overflow:hidden}
+button,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+button:disabled{cursor:default;opacity:.45}
+[hidden]{display:none!important}
+svg{display:block}
+.icon{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sidebar{padding:27px 20px 21px;display:flex;flex-direction:column;background:var(--rail);border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:11px;margin:0 4px 38px;font-size:23px;font-weight:720;letter-spacing:-.7px}
+.brand-mark{display:grid;place-items:center;width:37px;height:37px;border-radius:11px;color:#171333;background:var(--accent)}
+.brand-mark .icon{width:23px;height:23px}
+.new{display:flex;align-items:center;gap:9px;padding:11px 13px;width:100%;background:#252544;border:1px solid #42406a;border-radius:9px;text-align:left;font-weight:650}
+.new:hover,.thread:hover{background:#33355c}
+.new .icon{color:var(--accent)}
+.label{color:var(--muted);font:10px var(--mono);letter-spacing:1.65px;text-transform:uppercase}
+.sidebar .label{margin:33px 7px 12px}
+.thread{width:100%;border:0;background:#20223b;border-radius:7px;padding:10px;display:flex;align-items:center;gap:9px;color:#d9d9ee;font-size:13px;text-align:left}
+.thread span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thread .icon{width:15px;height:15px;color:#a6a5c9}
+.rail-footer{margin-top:auto;padding:16px 4px 0;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.avatar{display:grid;place-items:center;width:32px;height:32px;background:#2e2c50;border:1px solid #424067;color:var(--accent);border-radius:8px}
+.rail-footer small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+main{min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.top{height:73px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 34px}
+.top-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:650}
+.top-title .icon{color:var(--muted)}
+.status{display:flex;align-items:center;gap:8px;border:1px solid #413b66;background:#242344;border-radius:99px;padding:6px 11px;color:#ded7ff;font:11px var(--mono)}
+.status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 9px #c3b0ff73}
+.mobile-new{display:none}
+.viewport{overflow:auto;min-height:0;scrollbar-color:#42436b transparent}
+.wrap{width:min(100% - 64px, 880px);margin-inline:auto}
+.welcome{padding:clamp(24px,5.2vh,60px) 0 24px}
+.hero{position:relative;isolation:isolate;overflow:hidden;min-height:310px;display:flex;align-items:center;border:1px solid #3d3a65;border-radius:21px;background:linear-gradient(108deg,#232246,#22234a 55%,#302d64)}
+.hero-content{z-index:1;padding:35px 39px}
+.eyebrow{display:flex;align-items:center;gap:8px;color:var(--accent);font:10px var(--mono);letter-spacing:2px;text-transform:uppercase}
+.eyebrow::before{content:"";width:17px;height:1px;background:var(--accent)}
+h1{font-size:clamp(38px,5vw,69px);font-weight:710;line-height:.99;letter-spacing:-.075em;margin:18px 0}
+h1 em{color:var(--accent);font-style:normal}
+.hero p{font-size:14px;color:#c7c6e8;max-width:33ch;margin:0}
+.orbit-art{position:absolute;z-index:-1;right:0;top:0;height:100%;width:52%;pointer-events:none}
+.prompt-title{display:flex;align-items:center;gap:11px;margin:26px 0 11px}
+.prompt-title::after{content:"";height:1px;background:var(--line);flex:1}
+.prompts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.prompt{min-width:0;text-align:left;background:#191b31;border:1px solid var(--line);border-radius:12px;padding:13px;transition:background .15s,border-color .15s}
+.prompt:hover{background:#26284a;border-color:#766cb6}
+.prompt-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+.tile{width:31px;height:31px;border-radius:8px;display:grid;place-items:center;color:#d5c8ff;background:#36315b}
+.tile .icon,.arrow{width:15px;height:15px}
+.prompt:nth-child(2) .tile{color:#bdc9ff;background:#2c345c}
+.prompt:nth-child(3) .tile{color:#aed8ff;background:#233553}
+.prompt:nth-child(4) .tile{color:#e3c9ff;background:#392b58}
+.arrow,.prompt small{color:var(--muted)}
+.prompt strong,.prompt small{display:block}
+.prompt strong{font-size:13px}
+.prompt small{font-size:11px;margin-top:3px}
+footer{padding:8px 0 18px;background:var(--bg)}
+.composer{border:1px solid #48486f;background:#1a1c33;border-radius:15px;overflow:hidden}
+.composer:focus-within{border-color:#a49ae7}
+textarea{resize:none;display:block;width:100%;border:0;background:none;padding:13px 14px;min-height:48px;max-height:140px;field-sizing:content;outline:none!important}
+textarea::placeholder{color:#adafcf}
+.composer-actions{display:flex;justify-content:space-between;align-items:center;padding:0 8px 8px 14px}
+.hint{font:10px var(--mono);color:var(--muted)}
+.send{width:35px;height:35px;border:0;border-radius:9px;background:var(--accent);color:#171333;display:grid;place-items:center}
+.send:hover:not(:disabled){background:#e8deff}
+.disclaimer{text-align:center;margin:9px 0 0;color:var(--muted);font-size:11px}
+.transcript{padding:30px 0;display:grid;gap:24px}
+.message{min-width:0;display:flex;gap:11px;align-items:flex-start}
+.message.user{justify-content:flex-end}
+.message-body{max-width:85%;border:1px solid var(--line);border-radius:13px;background:#1a1c32;padding:13px 16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.user .message-body{background:#2d2a55;border-color:#494171}
+.message strong{display:block;font:11px var(--mono);letter-spacing:.6px;color:var(--accent);margin-bottom:6px}
+@media(max-height:800px) and (min-width:721px){.top{height:62px}.welcome{padding-top:27px}.hero{min-height:262px}.hero-content{padding-block:25px}.prompt-title{margin-top:18px}}
+@media(max-width:1000px){body{grid-template-columns:190px minmax(0,1fr)}.sidebar{padding-inline:14px}.wrap{width:min(100% - 40px,880px)}.prompt{padding:10px}.hero-content{padding-inline:29px}}
+@media(max-width:720px){body{display:block}.sidebar{display:none}main{height:100%}.top{height:58px;padding:0 16px}.mobile-new{display:grid;place-items:center;background:#262747;border:1px solid #42406a;border-radius:8px;width:33px;height:33px;color:var(--accent)}.top-title>.icon{display:none}.wrap{width:calc(100% - 28px)}.welcome{padding:16px 0}.hero{min-height:232px;border-radius:15px}.hero-content{padding:22px 17px}.hero p{max-width:25ch;font-size:13px}.orbit-art{width:61%;right:-7%;opacity:.57}.prompts{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.prompt-top{margin-bottom:7px}.prompt-title{margin:17px 0 8px}footer{padding-bottom:9px}.disclaimer{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><ellipse cx="12" cy="12" rx="11" ry="4" transform="rotate(-37 12 12)"/><circle cx="17.8" cy="7.1" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.3-3.3A7.5 7.5 0 1 1 20 11.5Z"/></symbol>
+<symbol id="spark" viewBox="0 0 24 24"><path d="M12 2c0 6-4 10-10 10 6 0 10 4 10 10 0-6 4-10 10-10-6 0-10-4-10-10Z"/></symbol>
+<symbol id="pen" viewBox="0 0 24 24"><path d="m14 5 5 5M4 20l5-1 11-11a2 2 0 0 0-4-4L5 15l-1 5Z"/></symbol>
+<symbol id="code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-14-2 16"/></symbol>
+<symbol id="book" viewBox="0 0 24 24"><path d="M12 6v14M3 4h4a5 5 0 0 1 5 3 5 5 0 0 1 5-3h4v14h-4a5 5 0 0 0-5 3 5 5 0 0 0-5-3H3Z"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></symbol>
+<symbol id="send" viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></symbol>
+</svg>
+<aside class="sidebar" aria-label="Chat workspace">
+  <div class="brand"><span class="brand-mark"><svg class="icon"><use href="#orbit"/></svg></span>Orbit</div>
+  <button class="new" type="button"><svg class="icon" aria-hidden="true"><use href="#plus"/></svg>New chat</button>
+  <div class="label">Current chat</div>
+  <button class="thread" type="button"><svg class="icon" aria-hidden="true"><use href="#chat"/></svg><span>Untitled conversation</span></button>
+  <div class="rail-footer"><span class="avatar" aria-hidden="true">O</span><div>Orbit workspace<small>AI Chatbot</small></div></div>
+</aside>
+<main>
+  <header class="top">
+    <div class="top-title"><button class="mobile-new" type="button" aria-label="New chat"><svg class="icon" aria-hidden="true"><use href="#plus"/></svg></button><svg class="icon" aria-hidden="true"><use href="#chat"/></svg>AI Chatbot</div>
+    <span class="status">Preview mode</span>
+  </header>
+  <div class="viewport">
+    <section class="welcome wrap">
+      <div class="hero">
+        <div class="hero-content"><div class="eyebrow">Your AI workspace</div><h1>What’s on<br><em>your mind?</em></h1><p>Untangle an idea, write a first draft, or get unstuck. Start wherever you are.</p></div>
+        <svg class="orbit-art" viewBox="0 0 450 310" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#9894f6" opacity=".16"/></pattern>
+            <radialGradient id="gridFade"><stop stop-color="white"/><stop offset="1" stop-color="white" stop-opacity="0"/></radialGradient>
+            <mask id="fade"><rect width="450" height="310" fill="url(#gridFade)"/></mask>
+            <radialGradient id="sphere" cx=".31" cy=".23" r=".81"><stop stop-color="#e7ddff"/><stop offset=".32" stop-color="#9b8ef5"/><stop offset=".69" stop-color="#6257c0"/><stop offset="1" stop-color="#221c51"/></radialGradient>
+            <radialGradient id="halo"><stop stop-color="#9e8fff" stop-opacity=".2"/><stop offset="1" stop-color="#9e8fff" stop-opacity="0"/></radialGradient>
+            <clipPath id="planet"><circle cx="260" cy="153" r="80"/></clipPath>
+          </defs>
+          <rect width="450" height="310" fill="url(#grid)" mask="url(#fade)"/>
+          <circle cx="259" cy="153" r="148" fill="url(#halo)"/>
+          <g fill="none" stroke="#b5a7ff">
+            <circle cx="260" cy="153" r="111" opacity=".25" stroke-dasharray="2 5"/>
+            <circle cx="260" cy="153" r="130" opacity=".14"/>
+            <ellipse cx="260" cy="153" rx="145" ry="42" transform="rotate(-25 260 153)" opacity=".48"/>
+          </g>
+          <circle cx="260" cy="153" r="80" fill="url(#sphere)" stroke="#b9adff" stroke-opacity=".55"/>
+          <g clip-path="url(#planet)" fill="none" stroke="#d9ceff" opacity=".43" transform="rotate(-25 260 153)">
+            <ellipse cx="260" cy="153" rx="31" ry="80"/><ellipse cx="260" cy="153" rx="56" ry="80"/><ellipse cx="260" cy="153" rx="75" ry="80"/>
+            <ellipse cx="260" cy="153" rx="80" ry="19"/><ellipse cx="260" cy="120" rx="74" ry="15"/><ellipse cx="260" cy="186" rx="74" ry="15"/>
+            <ellipse cx="260" cy="96" rx="55" ry="10"/><ellipse cx="260" cy="210" rx="55" ry="10"/>
+          </g>
+          <path d="M115 153a145 42 0 0 0 290 0" transform="rotate(-25 260 153)" fill="none" stroke="#e0d5ff" stroke-width="1.3"/>
+          <g fill="#c3b0ff"><circle cx="372" cy="82" r="4"/><circle cx="143" cy="211" r="2.6"/><circle cx="326" cy="239" r="2"/><circle cx="152" cy="73" r="1.8"/><path d="M382 177h12m-6-6v12M190 253h9m-4.5-4.5v9" stroke="#c2b5ff"/></g>
+          <g fill="#a49cda" font-family="Consolas, monospace" font-size="9" letter-spacing="1.5"><text x="348" y="270">ORBIT / 01</text><text x="91" y="48">+</text></g>
+        </svg>
+      </div>
+      <h2 class="prompt-title label">Try a starter</h2>
+      <div class="prompts">
+        <button class="prompt" type="button" data-prompt="Help me brainstorm five creative ideas for a weekend project."><span class="prompt-top"><span class="tile"><svg class="icon" aria-hidden="true"><use href="#spark"/></svg></span><svg class="icon arrow" aria-hidden="true"><use href="#arrow"/></svg></span><strong>Brainstorm</strong><small>Explore a new idea</small></button>
+        <button class="prompt" type="button" data-prompt="Help me write a friendly follow-up email after a meeting."><span class="prompt-top"><span class="tile"><svg class="icon" aria-hidden="true"><use href="#pen"/></svg></span><svg class="icon arrow" aria-hidden="true"><use href="#arrow"/></svg></span><strong>Write a draft</strong><small>Find the right words</small></button>
+        <button class="prompt" type="button" data-prompt="Show me how to read a CSV file in Python, with an example."><span class="prompt-top"><span class="tile"><svg class="icon" aria-hidden="true"><use href="#code"/></svg></span><svg class="icon arrow" aria-hidden="true"><use href="#arrow"/></svg></span><strong>Get coding help</strong><small>Work through a problem</small></button>
+        <button class="prompt" type="button" data-prompt="Explain how solar panels work in simple terms."><span class="prompt-top"><span class="tile"><svg class="icon" aria-hidden="true"><use href="#book"/></svg></span><svg class="icon arrow" aria-hidden="true"><use href="#arrow"/></svg></span><strong>Learn something</strong><small>Make a topic click</small></button>
+      </div>
+    </section>
+    <section class="transcript wrap" aria-label="Conversation" role="log" hidden></section>
+  </div>
+  <footer class="wrap">
+    <form class="composer">
+      <textarea rows="1" maxlength="4000" aria-label="Message Orbit" placeholder="Message Orbit…"></textarea>
+      <div class="composer-actions"><span class="hint">Enter to send · Shift + Enter for a new line</span><button class="send" type="submit" aria-label="Send message"><svg class="icon" aria-hidden="true"><use href="#send"/></svg></button></div>
+    </form>
+    <p class="disclaimer">AI can make mistakes. Double-check important information.</p>
+  </footer>
+</main>
+<script>
+const form = document.querySelector('.composer');
+const input = form.querySelector('textarea');
+const send = form.querySelector('.send');
+const welcome = document.querySelector('.welcome');
+const transcript = document.querySelector('.transcript');
+const viewport = document.querySelector('.viewport');
+const threadTitle = document.querySelector('.thread span');
+const status = document.querySelector('.status');
+let history = [];
+let pending;
+let live = false;
+
+if (location.protocol !== 'file:') {
+  fetch('/api/status').then(response => response.json()).then(settings => {
+    live = settings.live;
+    status.textContent = live ? 'AI connected' : 'Preview mode';
+  }).catch(() => {});
+}
+
+function updateSend() {
+  send.disabled = Boolean(pending) || !input.value.trim();
+}
+
+function addMessage(role, text) {
+  const message = document.createElement('article');
+  message.className = 'message ' + role;
+  if (role === 'assistant') {
+    const avatar = document.createElement('span');
+    avatar.className = 'avatar';
+    avatar.setAttribute('aria-hidden', 'true');
+    avatar.textContent = '✦';
+    message.append(avatar);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'message-body';
+  const name = document.createElement('strong');
+  name.textContent = role === 'user' ? 'YOU' : 'ORBIT';
+  const content = document.createElement('div');
+  content.textContent = text;
+  bubble.append(name, content);
+  message.append(bubble);
+  transcript.append(message);
+  viewport.scrollTop = viewport.scrollHeight;
+  return content;
+}
+
+function previewReply(prompt) {
+  if (prompt === document.querySelector('.prompt:last-child').dataset.prompt) {
+    return 'Here’s a sample reply from Orbit.\n\nSolar panels turn sunlight into electricity. When sunlight hits a solar cell, it gives electrons enough energy to move. That movement creates an electric current.\n\nThe panels produce direct current (DC). An inverter converts it to alternating current (AC), which is what most home appliances use.';
+  }
+  return 'You’re in preview mode. Set OPENAI_API_KEY and launch the Python app to get live replies.';
+}
+
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const prompt = input.value.trim();
+  if (!prompt || pending) return;
+  const request = new AbortController();
+  pending = request;
+  input.value = '';
+  updateSend();
+  welcome.hidden = true;
+  transcript.hidden = false;
+  if (!transcript.childElementCount) threadTitle.textContent = prompt;
+  addMessage('user', prompt);
+  const reply = addMessage('assistant', live ? 'Thinking…' : '');
+  try {
+    if (live) {
+      const messages = [...history, {role: 'user', content: prompt}].slice(-21);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(messages),
+        signal: request.signal
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      if (pending !== request) return;
+      reply.textContent = result.reply;
+      history = [...messages, {role: 'assistant', content: result.reply}];
+    } else {
+      reply.textContent = previewReply(prompt);
     }
-    </style>
-    
+  } catch (error) {
+    if (pending === request) {
+      reply.textContent = 'Orbit couldn’t get a reply. Try sending your message again.';
+      if (!input.value) input.value = prompt;
+    }
+  } finally {
+    if (pending === request) {
+      pending = null;
+      updateSend();
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }
+});
+
+input.addEventListener('input', updateSend);
+input.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
+});
+document.querySelectorAll('.prompt').forEach(button => button.addEventListener('click', () => {
+  input.value = button.dataset.prompt;
+  updateSend();
+  input.focus();
+}));
+document.querySelectorAll('.new, .mobile-new').forEach(button => button.addEventListener('click', () => {
+  pending?.abort();
+  pending = null;
+  history = [];
+  transcript.replaceChildren();
+  transcript.hidden = true;
+  welcome.hidden = false;
+  threadTitle.textContent = 'Untitled conversation';
+  input.value = '';
+  viewport.scrollTop = 0;
+  updateSend();
+  input.focus();
+}));
+document.querySelector('.thread').addEventListener('click', () => {
+  viewport.scrollTop = viewport.scrollHeight;
+  input.focus();
+});
+updateSend();
+</script>
+</body>
+</html>
